@@ -240,7 +240,7 @@ export default function HelpPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">Accuracy</span>
-                        <span className="text-sm text-slate-600">~85%</span>
+                        <span className="text-sm text-slate-600">84.2%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">Speed</span>
@@ -256,18 +256,18 @@ export default function HelpPage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Decision Tree</CardTitle>
-                    <CardDescription>Rule-based model using decision branches</CardDescription>
+                    <CardTitle>XGBoost</CardTitle>
+                    <CardDescription>Gradient boosting ensemble method</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p className="text-slate-600 mb-4">
-                      Creates a tree of if-then rules to make decisions. Easy to understand and provides clear decision
-                      paths for each prediction.
+                      Advanced gradient boosting algorithm that combines multiple weak learners to create a strong
+                      predictor. Excellent performance with structured data and handles missing values well.
                     </p>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">Accuracy</span>
-                        <span className="text-sm text-slate-600">~82%</span>
+                        <span className="text-sm text-slate-600">91.0%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">Speed</span>
@@ -275,7 +275,7 @@ export default function HelpPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">Interpretability</span>
-                        <span className="text-sm text-slate-600">Very High</span>
+                        <span className="text-sm text-slate-600">Moderate</span>
                       </div>
                     </div>
                   </CardContent>
@@ -294,7 +294,7 @@ export default function HelpPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">Accuracy</span>
-                        <span className="text-sm text-slate-600">~88%</span>
+                        <span className="text-sm text-slate-600">89.1%</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm font-medium">Speed</span>
@@ -314,6 +314,6 @@ export default function HelpPage() {
       </div>
 
       <Footer />
-    </div>
-  )
+    </div>
+  )
 }
