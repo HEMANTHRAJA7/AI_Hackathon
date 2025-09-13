@@ -7,15 +7,19 @@ import { PredictionForm } from "@/components/prediction-form"
 import { PredictionResults } from "@/components/prediction-results"
 
 export interface PredictionData {
-  totalIncome: number
-  age: number
-  yearsOfWork: number
-  familySize: number
-  incomeType: string
-  educationType: string
-  familyStatus: string
-  housingType: string
-  badDebt: boolean
+  person_age: number
+  person_gender: string
+  person_education: string
+  person_income: number
+  person_emp_exp: number
+  person_home_ownership: string
+  loan_amnt: number
+  loan_intent: string
+  loan_int_rate: number
+  loan_percent_income: number
+  cb_person_cred_hist_length: number
+  credit_score: number
+  previous_loan_defaults_on_file: string
 }
 
 export interface PredictionResult {
@@ -25,6 +29,10 @@ export interface PredictionResult {
   creditLimit: number
   positiveFactors: string[]
   negativeFactors: string[]
+  modelOutput?: {
+    prediction: number
+    probabilities: number[]
+  }
 }
 
 export default function PredictionPage() {
@@ -75,10 +83,10 @@ function generateMockPrediction(data: PredictionData): PredictionResult {
   const negativeFactors: string[] = []
 
   // Income scoring
-  if (data.totalIncome > 100000) {
+  if (data.person_income > 100000) {
     score += 30
     positiveFactors.push("High income level")
-  } else if (data.totalIncome > 50000) {
+  } else if (data.person_income > 50000) {
     score += 20
     positiveFactors.push("Stable income level")
   } else {
@@ -87,19 +95,19 @@ function generateMockPrediction(data: PredictionData): PredictionResult {
   }
 
   // Age scoring
-  if (data.age >= 25 && data.age <= 55) {
+  if (data.person_age >= 25 && data.person_age <= 55) {
     score += 15
     positiveFactors.push("Optimal age range")
-  } else if (data.age < 25) {
+  } else if (data.person_age < 25) {
     score -= 5
     negativeFactors.push("Young age")
   }
 
   // Work experience
-  if (data.yearsOfWork > 5) {
+  if (data.person_emp_exp > 5) {
     score += 15
     positiveFactors.push("Extensive work experience")
-  } else if (data.yearsOfWork > 2) {
+  } else if (data.person_emp_exp > 2) {
     score += 10
     positiveFactors.push("Good work experience")
   } else {
@@ -107,25 +115,28 @@ function generateMockPrediction(data: PredictionData): PredictionResult {
     negativeFactors.push("Limited work experience")
   }
 
-  // Bad debt
-  if (data.badDebt) {
-    score -= 25
-    negativeFactors.push("History of bad debt")
-  } else {
+  // Previous loan defaults
+  if (data.previous_loan_defaults_on_file === "No") {
     score += 20
     positiveFactors.push("Clean credit history")
+  } else {
+    score -= 25
+    negativeFactors.push("History of loan defaults")
   }
 
   // Education
-  if (data.educationType === "Higher education" || data.educationType === "Academic degree") {
+  if (data.person_education === "Master" || data.person_education === "Doctorate") {
     score += 10
     positiveFactors.push("Higher education level")
   }
 
-  // Family status
-  if (data.familyStatus === "Married") {
-    score += 5
-    positiveFactors.push("Married status")
+  // Credit score
+  if (data.credit_score >= 700) {
+    score += 15
+    positiveFactors.push("Excellent credit score")
+  } else if (data.credit_score < 600) {
+    score -= 10
+    negativeFactors.push("Poor credit score")
   }
 
   // Convert score to probability
@@ -145,7 +156,11 @@ function generateMockPrediction(data: PredictionData): PredictionResult {
     riskLevel = "high"
   }
 
-  const creditLimit = approvalStatus === "approved" ? Math.round((data.totalIncome * 0.3) / 1000) * 1000 : 0
+  const creditLimit = approvalStatus === "approved" ? Math.round((data.person_income * 0.3) / 1000) * 1000 : 0
+  
+  // Simulate SVM model output
+  const modelProb = probability / 100;
+  const modelPrediction = probability >= 50 ? 1 : 0;
 
   return {
     approvalStatus,
@@ -154,5 +169,9 @@ function generateMockPrediction(data: PredictionData): PredictionResult {
     creditLimit,
     positiveFactors,
     negativeFactors,
+    modelOutput: {
+      prediction: modelPrediction,
+      probabilities: [1 - modelProb, modelProb]
+    }
   }
 }

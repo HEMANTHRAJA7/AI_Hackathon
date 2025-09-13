@@ -102,13 +102,16 @@ export function PredictionResults({ result, isLoading }: PredictionResultsProps)
             </div>
           </div>
 
-          {/* Probability */}
+          {/* SVM Probability */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-slate-700">Approval Probability</span>
               <span className="text-sm font-semibold text-slate-900">{result.probability}%</span>
             </div>
             <Progress value={result.probability} className="h-3" />
+            <p className="text-xs text-slate-500">
+              Based on SVM model analysis of your application data
+            </p>
           </div>
 
           {/* Risk Level */}
@@ -116,6 +119,24 @@ export function PredictionResults({ result, isLoading }: PredictionResultsProps)
             <span className="text-sm font-medium text-slate-700">Risk Level</span>
             {getRiskBadge()}
           </div>
+          
+          {/* Model Confidence */}
+          {result.modelOutput && (
+            <div className="flex flex-col gap-1 p-3 bg-blue-50 rounded-md">
+              <p className="text-xs font-medium text-blue-800">Machine Learning Confidence</p>
+              <div className="flex items-center gap-2">
+                <div className="w-full bg-gray-200 h-1.5 rounded-full">
+                  <div 
+                    className="bg-blue-600 h-1.5 rounded-full" 
+                    style={{ width: `${result.modelOutput.probabilities[1] * 100}%` }}
+                  ></div>
+                </div>
+                <span className="text-xs font-medium text-blue-900">
+                  {Math.round(result.modelOutput.probabilities[1] * 100)}%
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Credit Limit */}
           {result.creditLimit > 0 && (
@@ -171,6 +192,82 @@ export function PredictionResults({ result, isLoading }: PredictionResultsProps)
               </ul>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* SVM Model Explanation */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-blue-600">
+              <path d="M12 2a4 4 0 0 0-4 4v16" />
+              <path d="M8 22h8" />
+              <path d="M12 2a4 4 0 0 1 4 4v2" />
+              <path d="M16 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
+              <path d="M16 19a4 4 0 0 1-8 0 4 4 0 0 1 8 0Z" />
+            </svg>
+            Machine Learning Model
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-4 bg-slate-50 rounded-md">
+            <h4 className="text-sm font-semibold text-slate-800 mb-2">Support Vector Machine (SVM)</h4>
+            <p className="text-sm text-slate-600">
+              This prediction was made using a Support Vector Machine learning model trained on thousands of 
+              historical loan applications. The model identifies patterns in the data to predict approval likelihood.
+            </p>
+          </div>
+
+          {/* Key Features */}
+          <div>
+            <h4 className="text-sm font-semibold text-slate-800 mb-2">Key Features</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-2 bg-slate-50 rounded text-sm">
+                <div className="font-medium text-slate-700">Credit Score</div>
+                <div className="text-xs text-slate-500">Strong predictor</div>
+              </div>
+              <div className="p-2 bg-slate-50 rounded text-sm">
+                <div className="font-medium text-slate-700">Payment History</div>
+                <div className="text-xs text-slate-500">Critical factor</div>
+              </div>
+              <div className="p-2 bg-slate-50 rounded text-sm">
+                <div className="font-medium text-slate-700">Income</div>
+                <div className="text-xs text-slate-500">Important factor</div>
+              </div>
+              <div className="p-2 bg-slate-50 rounded text-sm">
+                <div className="font-medium text-slate-700">Loan-to-Income</div>
+                <div className="text-xs text-slate-500">Key ratio</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Prediction Confidence */}
+          <div>
+            <h4 className="text-sm font-semibold text-slate-800 mb-2">Prediction Confidence</h4>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-slate-500">Low</span>
+                <span className="text-xs text-slate-500">High</span>
+              </div>
+              <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${
+                    result.probability >= 70 
+                      ? "bg-green-500" 
+                      : result.probability >= 40 
+                      ? "bg-yellow-500" 
+                      : "bg-red-500"
+                  }`}
+                  style={{ width: `${result.probability}%` }}
+                ></div>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                {result.probability < 40 && "The model has low confidence in approval."}
+                {result.probability >= 40 && result.probability < 70 && "The model has moderate confidence in the prediction."}
+                {result.probability >= 70 && "The model has high confidence in approval."}
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

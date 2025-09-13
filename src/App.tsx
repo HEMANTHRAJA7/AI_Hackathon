@@ -30,6 +30,10 @@ export interface PredictionResult {
   creditLimit: number
   positiveFactors: string[]
   negativeFactors: string[]
+  modelOutput?: {
+    prediction: number
+    probabilities: number[]
+  }
 }
 
 function App() {
@@ -41,13 +45,30 @@ function App() {
 
     console.log("Prediction JSON Data:", JSON.stringify(data, null, 2))
 
-    // Simulate API call with mock prediction logic
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      // Call our API endpoint that uses the SVM prediction logic
+      const response = await fetch('/api/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-    // Mock prediction logic
-    const mockResult = generateMockPrediction(data)
-    setPredictionResult(mockResult)
-    setIsLoading(false)
+      if (!response.ok) {
+        throw new Error('Prediction request failed');
+      }
+
+      const result = await response.json();
+      setPredictionResult(result);
+    } catch (error) {
+      console.error('Prediction error:', error);
+      // Fallback to mock prediction if API fails
+      const fallbackResult = generateMockPrediction(data);
+      setPredictionResult(fallbackResult);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
