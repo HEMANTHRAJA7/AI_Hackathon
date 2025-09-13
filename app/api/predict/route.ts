@@ -1,33 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { PredictionData } from "@/src/App";
 
+// Python ML server URL
+const ML_SERVER_URL = process.env.ML_SERVER_URL || "http://localhost:8000";
+
 export async function POST(request: NextRequest) {
   try {
-    const data: PredictionData = await request.json();
+    // Get the user data from the request
+    const userData = await request.json() as PredictionData;
     
-    // Process the prediction using our SVM prediction logic
-    const result = await predictLoanStatus(data);
+    // Process the prediction using the Python SVM model API
+    const result = await predictLoanStatus(userData);
     
     return NextResponse.json(result);
   } catch (error) {
     console.error("Prediction error:", error);
-    return NextResponse.json({ error: "Failed to process prediction" }, { status: 500 });
+    
+    // Fall back to the simulation if Python API fails
+    try {
+      // Try to parse the request again
+      const clonedRequest = request.clone();
+      const userData = await clonedRequest.json() as PredictionData;
+      
+      console.log("Falling back to simulation model...");
+      const formattedData = preprocessData(userData);
+      const [prediction, probability] = simulateSVMPrediction(formattedData);
+      const result = formatResult(prediction, probability, userData);
+      return NextResponse.json(result);
+    } catch (fallbackError) {
+      console.error("Fallback prediction error:", fallbackError);
+      return NextResponse.json({ error: "Failed to process prediction" }, { status: 500 });
+    }
   }
 }
 
 async function predictLoanStatus(data: PredictionData) {
-  // This is where we would call a Python backend with our SVM model
-  // For now, we'll implement a simplified version based on the notebook logic
+  // Call the Python Flask API with the SVM model
+  console.log(`Calling ML server at ${ML_SERVER_URL}/predict`);
   
-  // Convert data to the format expected by the model
-  const formattedData = preprocessData(data);
-  
-  // In a real implementation, this would call the Python backend
-  // For now, we'll use a simplified decision logic based on the SVM model
-  const [prediction, probability] = simulateSVMPrediction(formattedData);
-  
-  // Format the result for the frontend
-  return formatResult(prediction, probability, data);
+  try {
+    const response = await fetch(`${ML_SERVER_URL}/predict`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+      // Add this to ensure cookies are sent and CORS works properly
+      credentials: 'include',
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`ML server error: ${response.status} - ${errorText}`);
+      throw new Error(`ML server returned ${response.status}: ${errorText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error("Error connecting to ML server:", error);
+    throw error;
+  }
 }
 
 function preprocessData(data: PredictionData) {
