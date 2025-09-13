@@ -41,14 +41,31 @@ export default function PredictionPage() {
 
   const handlePrediction = async (data: PredictionData) => {
     setIsLoading(true)
-
-    // Simulate API call with mock prediction logic
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    // Mock prediction logic
-    const mockResult = generateMockPrediction(data)
-    setPredictionResult(mockResult)
-    setIsLoading(false)
+    
+    try {
+      // Call the actual API
+      const response = await fetch("/api/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      setPredictionResult(result);
+    } catch (error) {
+      console.error("Error making prediction:", error);
+      // Fall back to mock prediction if API fails
+      const mockResult = generateMockPrediction(data);
+      setPredictionResult(mockResult);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -77,10 +94,36 @@ export default function PredictionPage() {
 }
 
 function generateMockPrediction(data: PredictionData): PredictionResult {
-  // Simple mock logic for demonstration
+  // Risk scoring system for the mock prediction
   let score = 0
   const positiveFactors: string[] = []
   const negativeFactors: string[] = []
+
+  // Force rejection for extreme cases
+  if ((data.previous_loan_defaults_on_file === "Yes" && data.credit_score < 600) || 
+      (data.person_income < data.loan_amnt) || 
+      (data.person_age < 21)) {
+    
+    console.log("FORCED REJECTION due to high risk factors")
+    
+    return {
+      approvalStatus: "rejected",
+      probability: Math.floor(Math.random() * 20) + 10, // 10-30%
+      riskLevel: "high",
+      creditLimit: 0,
+      positiveFactors: [],
+      negativeFactors: [
+        data.previous_loan_defaults_on_file === "Yes" ? "Previous loan defaults" : "",
+        data.credit_score < 600 ? "Low credit score" : "",
+        data.person_income < data.loan_amnt ? "Income lower than loan amount" : "",
+        data.person_age < 21 ? "Applicant under minimum age" : ""
+      ].filter(Boolean),
+      modelOutput: {
+        prediction: 0,
+        probabilities: [0.8, 0.2] // Strong rejection bias
+      }
+    }
+  }
 
   // Income scoring
   if (data.person_income > 100000) {
@@ -115,7 +158,7 @@ function generateMockPrediction(data: PredictionData): PredictionResult {
     negativeFactors.push("Limited work experience")
   }
 
-  // Previous loan defaults
+  // Previous loan defaults - major factor
   if (data.previous_loan_defaults_on_file === "No") {
     score += 20
     positiveFactors.push("Clean credit history")
@@ -130,13 +173,19 @@ function generateMockPrediction(data: PredictionData): PredictionResult {
     positiveFactors.push("Higher education level")
   }
 
-  // Credit score
+  // Credit score - major factor
   if (data.credit_score >= 700) {
     score += 15
     positiveFactors.push("Excellent credit score")
   } else if (data.credit_score < 600) {
-    score -= 10
+    score -= 15
     negativeFactors.push("Poor credit score")
+  }
+  
+  // Loan to income ratio
+  if (data.loan_percent_income > 50) {
+    score -= 15
+    negativeFactors.push("High loan-to-income ratio")
   }
 
   // Convert score to probability
@@ -147,7 +196,7 @@ function generateMockPrediction(data: PredictionData): PredictionResult {
 
   if (probability >= 70) {
     approvalStatus = "approved"
-    riskLevel = "low"
+    riskLevel = probability >= 85 ? "low" : "medium"
   } else if (probability >= 40) {
     approvalStatus = "manual-review"
     riskLevel = "medium"
